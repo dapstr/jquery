@@ -1,58 +1,74 @@
 // Use the right jQuery source on the test page (and iframes)
 ( function() {
-	/* global loadTests: false */
+	var dynamicImportSource, config, src,
+		parentUrl = window.location.protocol + "//" + window.location.host,
+		QUnit = window.QUnit;
 
-	var src,
-		path = window.location.pathname.split( "test" )[ 0 ],
-		QUnit = window.QUnit || parent.QUnit,
-		require = window.require || parent.require;
+	function getQUnitConfig() {
+		var config = Object.create( null );
 
-	// iFrames won't load AMD (the iframe tests synchronously expect jQuery to be there)
-	QUnit.config.urlConfig.push( {
-		id: "amd",
-		label: "Load with AMD",
-		tooltip: "Load the AMD jQuery file (and its dependencies)"
-	} );
-
-	// If QUnit is on window, this is the main window
-	// This detection allows AMD tests to be run in an iframe
-	if ( QUnit.urlParams.amd && window.QUnit ) {
-		require.config( {
-			baseUrl: path,
-			paths: {
-				sizzle: "external/sizzle/dist/sizzle"
-			}
-		} );
-		src = "src/jquery";
-
-		// Include tests if specified
-		if ( typeof loadTests !== "undefined" ) {
-			require( [ src ], loadTests );
+		// Default to unminified jQuery for directly-opened iframes
+		if ( !QUnit ) {
+			config.dev = true;
 		} else {
-			require( [ src ] );
+
+			// QUnit.config is populated from QUnit.urlParams but only at the beginning
+			// of the test run. We need to read both.
+			QUnit.config.urlConfig.forEach( function( entry ) {
+				config[ entry.id ] = QUnit.config[ entry.id ] != null ?
+					QUnit.config[ entry.id ] :
+					QUnit.urlParams[ entry.id ];
+			} );
 		}
-		return;
+
+		return config;
 	}
 
-	// Config parameter to use minified jQuery
-	QUnit.config.urlConfig.push( {
-		id: "dev",
-		label: "Load unminified",
-		tooltip: "Load the development (unminified) jQuery file"
-	} );
-	if ( QUnit.urlParams.dev ) {
-		src = "dist/jquery.js";
+	// Define configuration parameters controlling how jQuery is loaded
+	if ( QUnit ) {
+		QUnit.config.urlConfig.push( {
+			id: "esmodules",
+			label: "Load as modules",
+			tooltip: "Load the jQuery module file (and its dependencies)"
+		}, {
+			id: "dev",
+			label: "Load unminified",
+			tooltip: "Load the development (unminified) jQuery file"
+		} );
+	}
+
+	config = getQUnitConfig();
+
+	src = config.dev ?
+		"dist/jquery.js" :
+		"dist/jquery.min.js";
+
+	// Honor ES modules loading on the main window (detected by seeing QUnit on it).
+	// This doesn't apply to iframes because they synchronously expect jQuery to be there.
+	if ( config.esmodules && QUnit ) {
+
+		// Support: IE 11+
+		// IE doesn't support the dynamic import syntax so it would crash
+		// with a SyntaxError here.
+		dynamicImportSource = "" +
+			"import( `${ parentUrl }/src/jquery.js` )\n" +
+			"	.then( ( { jQuery } ) => {\n" +
+			"		window.jQuery = jQuery;\n" +
+			"		if ( typeof loadTests === \"function\" ) {\n" +
+			"			// Include tests if specified\n" +
+			"			loadTests();\n" +
+			"		}\n" +
+			"	} )\n" +
+			"	.catch( error => {\n" +
+			"		console.error( error );\n" +
+			"		QUnit.done();\n" +
+			"	} );";
+
+		eval( dynamicImportSource );
+
+	// Otherwise, load synchronously
 	} else {
-		src = "dist/jquery.min.js";
-	}
-
-	// Load jQuery
-	document.write( "<script id='jquery-js' src='" + path + src + "'><\x2Fscript>" );
-
-	// Synchronous-only tests
-	// Other tests are loaded from the test page
-	if ( typeof loadTests !== "undefined" ) {
-		document.write( "<script src='" + path + "test/unit/ready.js'><\x2Fscript>" );
+		document.write( "<script id='jquery-js' nonce='jquery+hardcoded+nonce' src='" + parentUrl + "/" + src + "'><\x2Fscript>" );
 	}
 
 } )();

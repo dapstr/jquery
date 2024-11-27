@@ -1,3 +1,1 @@
-define( function() {
-	return [ "Top", "Right", "Bottom", "Left" ];
-} );
+export var cssExpand = [ "Top", "Right", "Bottom", "Left" ];

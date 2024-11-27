@@ -1,14 +1,13 @@
-define( [
-	"../core",
-	"./support",
-	"../core/init"
-], function( jQuery, support ) {
+import { jQuery } from "../core.js";
+import { isIE } from "../var/isIE.js";
+import { stripAndCollapse } from "../core/stripAndCollapse.js";
+import { nodeName } from "../core/nodeName.js";
 
-var rreturn = /\r/g;
+import "../core/init.js";
 
 jQuery.fn.extend( {
 	val: function( value ) {
-		var hooks, ret, isFunction,
+		var hooks, ret, valueIsFunction,
 			elem = this[ 0 ];
 
 		if ( !arguments.length ) {
@@ -25,19 +24,14 @@ jQuery.fn.extend( {
 
 				ret = elem.value;
 
-				return typeof ret === "string" ?
-
-					// Handle most common string cases
-					ret.replace( rreturn, "" ) :
-
-					// Handle cases where value is null/undef or number
-					ret == null ? "" : ret;
+				// Handle cases where value is null/undef or number
+				return ret == null ? "" : ret;
 			}
 
 			return;
 		}
 
-		isFunction = jQuery.isFunction( value );
+		valueIsFunction = typeof value === "function";
 
 		return this.each( function( i ) {
 			var val;
@@ -46,7 +40,7 @@ jQuery.fn.extend( {
 				return;
 			}
 
-			if ( isFunction ) {
+			if ( valueIsFunction ) {
 				val = value.call( this, i, jQuery( this ).val() );
 			} else {
 				val = value;
@@ -59,7 +53,7 @@ jQuery.fn.extend( {
 			} else if ( typeof val === "number" ) {
 				val += "";
 
-			} else if ( jQuery.isArray( val ) ) {
+			} else if ( Array.isArray( val ) ) {
 				val = jQuery.map( val, function( value ) {
 					return value == null ? "" : value + "";
 				} );
@@ -77,37 +71,32 @@ jQuery.fn.extend( {
 
 jQuery.extend( {
 	valHooks: {
-		option: {
-			get: function( elem ) {
-
-				// Support: IE<11
-				// option.value not trimmed (#14858)
-				return jQuery.trim( elem.value );
-			}
-		},
 		select: {
 			get: function( elem ) {
-				var value, option,
+				var value, option, i,
 					options = elem.options,
 					index = elem.selectedIndex,
 					one = elem.type === "select-one",
 					values = one ? null : [],
-					max = one ? index + 1 : options.length,
-					i = index < 0 ?
-						max :
-						one ? index : 0;
+					max = one ? index + 1 : options.length;
+
+				if ( index < 0 ) {
+					i = max;
+
+				} else {
+					i = one ? index : 0;
+				}
 
 				// Loop through all the selected options
 				for ( ; i < max; i++ ) {
 					option = options[ i ];
 
-					// IE8-9 doesn't update selected after form reset (#2551)
-					if ( ( option.selected || i === index ) &&
+					if ( option.selected &&
 
 							// Don't return options that are disabled or in a disabled optgroup
 							!option.disabled &&
 							( !option.parentNode.disabled ||
-								!jQuery.nodeName( option.parentNode, "optgroup" ) ) ) {
+								!nodeName( option.parentNode, "optgroup" ) ) ) {
 
 						// Get the specific value for the option
 						value = jQuery( option ).val();
@@ -133,9 +122,10 @@ jQuery.extend( {
 
 				while ( i-- ) {
 					option = options[ i ];
-					if ( option.selected =
-							jQuery.inArray( jQuery.valHooks.option.get( option ), values ) > -1
-					) {
+
+					if ( ( option.selected =
+						jQuery.inArray( jQuery( option ).val(), values ) > -1
+					) ) {
 						optionSet = true;
 					}
 				}
@@ -150,20 +140,30 @@ jQuery.extend( {
 	}
 } );
 
+if ( isIE ) {
+	jQuery.valHooks.option = {
+		get: function( elem ) {
+
+			var val = elem.getAttribute( "value" );
+			return val != null ?
+				val :
+
+				// Support: IE <=10 - 11+
+				// option.text throws exceptions (trac-14686, trac-14858)
+				// Strip and collapse whitespace
+				// https://html.spec.whatwg.org/#strip-and-collapse-whitespace
+				stripAndCollapse( jQuery.text( elem ) );
+		}
+	};
+}
+
 // Radios and checkboxes getter/setter
 jQuery.each( [ "radio", "checkbox" ], function() {
 	jQuery.valHooks[ this ] = {
 		set: function( elem, value ) {
-			if ( jQuery.isArray( value ) ) {
+			if ( Array.isArray( value ) ) {
 				return ( elem.checked = jQuery.inArray( jQuery( elem ).val(), value ) > -1 );
 			}
 		}
 	};
-	if ( !support.checkOn ) {
-		jQuery.valHooks[ this ].get = function( elem ) {
-			return elem.getAttribute( "value" ) === null ? "on" : elem.value;
-		};
-	}
-} );
-
 } );

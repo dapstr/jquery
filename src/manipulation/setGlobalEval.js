@@ -1,9 +1,7 @@
-define( [
-	"../data/var/dataPriv"
-], function( dataPriv ) {
+import { dataPriv } from "../data/var/dataPriv.js";
 
 // Mark scripts as having already been evaluated
-function setGlobalEval( elems, refElements ) {
+export function setGlobalEval( elems, refElements ) {
 	var i = 0,
 		l = elems.length;
 
@@ -15,6 +13,3 @@ function setGlobalEval( elems, refElements ) {
 		);
 	}
 }
-
-return setGlobalEval;
-} );

@@ -1,15 +1,15 @@
 ( function() {
 
-if ( !jQuery.fn.wrap ) { // no wrap module
+if ( !includesModule( "wrap" ) ) {
 	return;
 }
 
 QUnit.module( "wrap", {
-	teardown: moduleTeardown
+	afterEach: moduleTeardown
 } );
 
 // See test/unit/manipulation.js for explanation about these 2 functions
-function manipulationBareObj( value ) {
+function manipulationBareObj( value ) {
 	return value;
 }
 
@@ -21,9 +21,9 @@ function manipulationFunctionReturningObj( value ) {
 
 function testWrap( val, assert ) {
 
-	assert.expect( 19 );
+	assert.expect( 18 );
 
-	var defaultText, result, j, i, cacheLength;
+	var defaultText, result, j;
 
 	defaultText = "Try them out:";
 	result = jQuery( "#first" ).wrap( val( "<div class='red'><span></span></div>" ) ).text();
@@ -47,11 +47,11 @@ function testWrap( val, assert ) {
 		var checkbox = this;
 
 		assert.ok(
-		checkbox.checked, "Checkbox's state is erased after wrap() action, see #769"
+		checkbox.checked, "Checkbox's state is erased after wrap() action, see trac-769"
 	);
 		jQuery( checkbox ).wrap( val( "<div id='c1' style='display:none;'></div>" ) );
 		assert.ok(
-		checkbox.checked, "Checkbox's state is erased after wrap() action, see #769"
+		checkbox.checked, "Checkbox's state is erased after wrap() action, see trac-769"
 	);
 	} ).prop( "checked", false )[ 0 ].click();
 
@@ -60,7 +60,7 @@ function testWrap( val, assert ) {
 	j.wrap( val( "<i></i>" ) );
 
 	assert.equal(
-		jQuery( "#nonnodes > i" ).length, jQuery( "#nonnodes" )[ 0 ].childNodes.length,
+		jQuery( "#nonnodes > i" ).length, 3,
 		"Check node,textnode,comment wraps ok"
 	);
 	assert.equal(
@@ -68,13 +68,7 @@ function testWrap( val, assert ) {
 		"Check node,textnode,comment wraps doesn't hurt text"
 	);
 
-	// Try wrapping a disconnected node
-	cacheLength = 0;
-	for ( i in jQuery.cache ) {
-		cacheLength++;
-	}
-
-	j = jQuery( "<label/>" ).wrap( val( "<li/>" ) );
+	j = jQuery( "<label></label>" ).wrap( val( "<li></li>" ) );
 	assert.equal(
 		j[ 0 ] .nodeName.toUpperCase(), "LABEL", "Element is a label"
 	);
@@ -82,15 +76,8 @@ function testWrap( val, assert ) {
 		j[ 0 ].parentNode.nodeName.toUpperCase(), "LI", "Element has been wrapped"
 	);
 
-	for ( i in jQuery.cache ) {
-		cacheLength--;
-	}
-	assert.equal(
-		cacheLength, 0, "No memory leak in jQuery.cache (bug #7165)"
-	);
-
 	// Wrap an element containing a text node
-	j = jQuery( "<span/>" ).wrap( "<div>test</div>" );
+	j = jQuery( "<span></span>" ).wrap( "<div>test</div>" );
 	assert.equal(
 		j[ 0 ].previousSibling.nodeType, 3, "Make sure the previous node is a text element"
 	);
@@ -112,7 +99,7 @@ function testWrap( val, assert ) {
 	);
 
 	// Wrap an element with a jQuery set
-	j = jQuery( "<span/>" ).wrap( jQuery( "<div></div>" ) );
+	j = jQuery( "<span></span>" ).wrap( jQuery( "<div></div>" ) );
 	assert.equal(
 		j[ 0 ].parentNode.nodeName.toLowerCase(), "div", "Wrapping works."
 	);
@@ -128,7 +115,7 @@ function testWrap( val, assert ) {
 		jQuery( this ).off();
 	} );
 
-	j = jQuery( "<span/>" ).wrap( result );
+	j = jQuery( "<span></span>" ).wrap( result );
 	assert.equal(
 		j[ 0 ].parentNode.nodeName.toLowerCase(), "div", "Wrapping works."
 	);
@@ -144,7 +131,7 @@ QUnit.test( "wrap(Function)", function( assert ) {
 	testWrap( manipulationFunctionReturningObj, assert );
 } );
 
-QUnit.test( "wrap(Function) with index (#10177)", function( assert ) {
+QUnit.test( "wrap(Function) with index (trac-10177)", function( assert ) {
 	var expectedIndex = 0,
 		targets = jQuery( "#qunit-fixture p" );
 
@@ -160,7 +147,7 @@ QUnit.test( "wrap(Function) with index (#10177)", function( assert ) {
 	} );
 } );
 
-QUnit.test( "wrap(String) consecutive elements (#10177)", function( assert ) {
+QUnit.test( "wrap(String) consecutive elements (trac-10177)", function( assert ) {
 	var targets = jQuery( "#qunit-fixture p" );
 
 	assert.expect( targets.length * 2 );
@@ -313,7 +300,7 @@ QUnit.test( "wrapInner(Element)", function( assert ) {
 	assert.expect( 5 );
 
 	var num,
-		div = jQuery( "<div/>" );
+		div = jQuery( "<div></div>" );
 
 	num = jQuery( "#first" ).children().length;
 	jQuery( "#first" ).wrapInner( document.getElementById( "empty" ) );
@@ -375,7 +362,7 @@ QUnit.test( "wrapInner(Function) returns Element", function( assert ) {
 
 	var num,
     val = manipulationFunctionReturningObj,
-		div = jQuery( "<div/>" );
+		div = jQuery( "<div></div>" );
 
 	num = jQuery( "#first" ).children().length;
 	jQuery( "#first" ).wrapInner( val( document.getElementById( "empty" ) ) );
@@ -472,7 +459,7 @@ QUnit.test( "unwrap( selector )", function( assert ) {
 		jQuery( "#unwrap1" ).length, 1, "still wrapped"
 	);
 
-	 // Shouldn't unwrap, no match
+	// Shouldn't unwrap, no match
 	jQuery( "#unwrap1 span" ) .unwrap( "span" );
 	assert.equal(
 		jQuery( "#unwrap1" ).length, 1, "still wrapped"
@@ -497,7 +484,7 @@ QUnit.test( "unwrap( selector )", function( assert ) {
 	jQuery( "body > span.unwrap" ).remove();
 } );
 
-QUnit.test( "jQuery(<tag>) & wrap[Inner/All]() handle unknown elems (#10667)", function( assert ) {
+QUnit.test( "jQuery(<tag>) & wrap[Inner/All]() handle unknown elems (trac-10667)", function( assert ) {
 
 	assert.expect( 2 );
 
@@ -516,13 +503,13 @@ QUnit.test( "jQuery(<tag>) & wrap[Inner/All]() handle unknown elems (#10667)", f
 	);
 } );
 
-QUnit.test( "wrapping scripts (#10470)", function( assert ) {
+QUnit.test( "wrapping scripts (trac-10470)", function( assert ) {
 
 	assert.expect( 2 );
 
 	var script = document.createElement( "script" );
 	script.text = script.textContent =
-		"ok( !document.eval10470, 'script evaluated once' ); document.eval10470 = true;";
+		"QUnit.assert.ok( !document.eval10470, 'script evaluated once' ); document.eval10470 = true;";
 
 	document.eval10470 = false;
 	jQuery( "#qunit-fixture" ).empty()[ 0 ].appendChild( script );

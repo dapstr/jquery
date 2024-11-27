@@ -1,5 +1,3 @@
-define( [
-	"../Data"
-], function( Data ) {
-	return new Data();
-} );
+import { Data } from "../Data.js";
+
+export var dataUser = new Data();

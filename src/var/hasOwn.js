@@ -1,5 +1,3 @@
-define( [
-	"./class2type"
-], function( class2type ) {
-	return class2type.hasOwnProperty;
-} );
+import { class2type } from "./class2type.js";
+
+export var hasOwn = class2type.hasOwnProperty;

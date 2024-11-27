@@ -1,90 +1,67 @@
-define( [
-	"../core",
-	"../var/document",
-	"../var/documentElement",
-	"../var/support"
-], function( jQuery, document, documentElement, support ) {
+import { document } from "../var/document.js";
+import { documentElement } from "../var/documentElement.js";
+import { support } from "../var/support.js";
 
 ( function() {
-	var pixelPositionVal, boxSizingReliableVal, pixelMarginRightVal, reliableMarginLeftVal,
-		container = document.createElement( "div" ),
-		div = document.createElement( "div" );
 
-	// Finish early in limited (non-browser) environments
-	if ( !div.style ) {
-		return;
-	}
+var reliableTrDimensionsVal,
+	div = document.createElement( "div" );
 
-	// Support: IE9-11+
-	// Style of cloned element affects source element cloned (#8908)
-	div.style.backgroundClip = "content-box";
-	div.cloneNode( true ).style.backgroundClip = "";
-	support.clearCloneStyle = div.style.backgroundClip === "content-box";
+// Finish early in limited (non-browser) environments
+if ( !div.style ) {
+	return;
+}
 
-	container.style.cssText = "border:0;width:8px;height:0;top:0;left:-9999px;" +
-		"padding:0;margin-top:1px;position:absolute";
-	container.appendChild( div );
+// Support: IE 10 - 11+
+// IE misreports `getComputedStyle` of table rows with width/height
+// set in CSS while `offset*` properties report correct values.
+// Support: Firefox 70+
+// Only Firefox includes border widths
+// in computed dimensions. (gh-4529)
+support.reliableTrDimensions = function() {
+	var table, tr, trStyle;
+	if ( reliableTrDimensionsVal == null ) {
+		table = document.createElement( "table" );
+		tr = document.createElement( "tr" );
 
-	// Executing both pixelPosition & boxSizingReliable tests require only one layout
-	// so they're executed at the same time to save the second computation.
-	function computeStyleTests() {
-		div.style.cssText =
-			"box-sizing:border-box;" +
-			"position:relative;display:block;" +
-			"margin:auto;border:1px;padding:1px;" +
-			"top:1%;width:50%";
-		div.innerHTML = "";
-		documentElement.appendChild( container );
+		table.style.cssText = "position:absolute;left:-11111px;border-collapse:separate";
+		tr.style.cssText = "box-sizing:content-box;border:1px solid";
 
-		var divStyle = window.getComputedStyle( div );
-		pixelPositionVal = divStyle.top !== "1%";
-		reliableMarginLeftVal = divStyle.marginLeft === "2px";
-		boxSizingReliableVal = divStyle.width === "4px";
+		// Support: Chrome 86+
+		// Height set through cssText does not get applied.
+		// Computed height then comes back as 0.
+		tr.style.height = "1px";
+		div.style.height = "9px";
 
-		// Support: Android 4.0 - 4.3 only
-		// Some styles come back with percentage values, even though they shouldn't
-		div.style.marginRight = "50%";
-		pixelMarginRightVal = divStyle.marginRight === "4px";
+		// Support: Android Chrome 86+
+		// In our bodyBackground.html iframe,
+		// display for all div elements is set to "inline",
+		// which causes a problem only in Android Chrome, but
+		// not consistently across all devices.
+		// Ensuring the div is `display: block`
+		// gets around this issue.
+		div.style.display = "block";
 
-		documentElement.removeChild( container );
-	}
+		documentElement
+			.appendChild( table )
+			.appendChild( tr )
+			.appendChild( div );
 
-	jQuery.extend( support, {
-		pixelPosition: function() {
-
-			// This test is executed only once but we still do memoizing
-			// since we can use the boxSizingReliable pre-computing.
-			// No need to check if the test was already performed, though.
-			computeStyleTests();
-			return pixelPositionVal;
-		},
-		boxSizingReliable: function() {
-			if ( boxSizingReliableVal == null ) {
-				computeStyleTests();
-			}
-			return boxSizingReliableVal;
-		},
-		pixelMarginRight: function() {
-
-			// Support: Android 4.0-4.3
-			// We're checking for boxSizingReliableVal here instead of pixelMarginRightVal
-			// since that compresses better and they're computed together anyway.
-			if ( boxSizingReliableVal == null ) {
-				computeStyleTests();
-			}
-			return pixelMarginRightVal;
-		},
-		reliableMarginLeft: function() {
-
-			// Support: IE <=8 only, Android 4.0 - 4.3 only, Firefox <=3 - 37
-			if ( boxSizingReliableVal == null ) {
-				computeStyleTests();
-			}
-			return reliableMarginLeftVal;
+		// Don't run until window is visible
+		if ( table.offsetWidth === 0 ) {
+			documentElement.removeChild( table );
+			return;
 		}
-	} );
+
+		trStyle = window.getComputedStyle( tr );
+		reliableTrDimensionsVal = ( Math.round( parseFloat( trStyle.height ) ) +
+			Math.round( parseFloat( trStyle.borderTopWidth ) ) +
+			Math.round( parseFloat( trStyle.borderBottomWidth ) ) ) === tr.offsetHeight;
+
+		documentElement.removeChild( table );
+	}
+	return reliableTrDimensionsVal;
+};
 } )();
 
-return support;
-
-} );
+export { support };

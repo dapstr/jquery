@@ -1,5 +1,3 @@
-define( [
-	"./arr"
-], function( arr ) {
-	return arr.slice;
-} );
+import { arr } from "./arr.js";
+
+export var slice = arr.slice;

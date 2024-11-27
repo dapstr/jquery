@@ -1,3 +1,1 @@
-define( function() {
-	return window.location;
-} );
+export var location = window.location;

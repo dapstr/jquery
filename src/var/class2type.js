@@ -1,5 +1,2 @@
-define( function() {
-
-	// [[Class]] -> type pairs
-	return {};
-} );
+// [[Class]] -> type pairs
+export var class2type = {};

@@ -1,3 +1,1 @@
-define( function() {
-	return window.document;
-} );
+export var document = window.document;

@@ -1,33 +1,29 @@
 ( function() {
 
 // Can't test what ain't there
-if ( !jQuery.fx ) {
+if ( !includesModule( "effects" ) ) {
 	return;
 }
 
-var oldRaf = window.requestAnimationFrame,
+var fxInterval = 13,
+	oldRaf = window.requestAnimationFrame,
 	defaultPrefilter = jQuery.Animation.prefilters[ 0 ],
 	defaultTweener = jQuery.Animation.tweeners[ "*" ][ 0 ],
 	startTime = 505877050;
 
 // This module tests jQuery.Animation and the corresponding 1.8+ effects APIs
 QUnit.module( "animation", {
-	setup: function() {
-		window.requestAnimationFrame = null;
-		this.sandbox = sinon.sandbox.create();
+	beforeEach: function() {
+		this.sandbox = sinon.createSandbox();
 		this.clock = this.sandbox.useFakeTimers( startTime );
-		this._oldInterval = jQuery.fx.interval;
+		window.requestAnimationFrame = null;
 		jQuery.fx.step = {};
-		jQuery.fx.interval = 10;
-		jQuery.now = Date.now;
 		jQuery.Animation.prefilters = [ defaultPrefilter ];
 		jQuery.Animation.tweeners = { "*": [ defaultTweener ] };
 	},
-	teardown: function() {
+	afterEach: function() {
 		this.sandbox.restore();
-		jQuery.now = Date.now;
 		jQuery.fx.stop();
-		jQuery.fx.interval = this._oldInterval;
 		window.requestAnimationFrame = oldRaf;
 		return moduleTeardown.apply( this, arguments );
 	}
@@ -38,7 +34,7 @@ QUnit.test( "Animation( subject, props, opts ) - shape", function( assert ) {
 
 	var subject = { test: 0 },
 		props = { test: 1 },
-		opts = { queue: "fx", duration: 100 },
+		opts = { queue: "fx", duration: fxInterval * 10 },
 		animation = jQuery.Animation( subject, props, opts );
 
 	assert.equal(
@@ -61,14 +57,14 @@ QUnit.test( "Animation( subject, props, opts ) - shape", function( assert ) {
 	assert.deepEqual( animation.props, props, ".props is a copy of the original" );
 
 	assert.deepEqual( animation.opts, {
-		duration: 100,
+		duration: fxInterval * 10,
 		queue: "fx",
 		specialEasing: { test: undefined },
 		easing: jQuery.easing._default
 	}, ".options is filled with default easing and specialEasing" );
 
 	assert.equal( animation.startTime, startTime, "startTime was set" );
-	assert.equal( animation.duration, 100, ".duration is set" );
+	assert.equal( animation.duration, fxInterval * 10, ".duration is set" );
 
 	assert.equal( animation.tweens.length, 1, ".tweens has one Tween" );
 	assert.equal( typeof animation.tweens[ 0 ].run, "function", "which has a .run function" );
@@ -87,7 +83,7 @@ QUnit.test( "Animation( subject, props, opts ) - shape", function( assert ) {
 	assert.equal( jQuery.timers[ 0 ].queue, opts.queue, "...with .queue" );
 
 	// Cleanup after ourselves by ticking to the end
-	this.clock.tick( 100 );
+	this.clock.tick( fxInterval * 10 );
 } );
 
 QUnit.test( "Animation.prefilter( fn ) - calls prefilter after defaultPrefilter",
@@ -95,7 +91,7 @@ QUnit.test( "Animation.prefilter( fn ) - calls prefilter after defaultPrefilter"
 		assert.expect( 1 );
 
 		var prefilter = this.sandbox.stub(),
-			defaultSpy = this.sandbox.spy( jQuery.Animation.prefilters, 0 );
+			defaultSpy = this.sandbox.spy( jQuery.Animation.prefilters, "0" );
 
 		jQuery.Animation.prefilter( prefilter );
 
@@ -109,7 +105,7 @@ QUnit.test( "Animation.prefilter( fn, true ) - calls prefilter before defaultPre
 		assert.expect( 1 );
 
 		var prefilter = this.sandbox.stub(),
-			defaultSpy = this.sandbox.spy( jQuery.Animation.prefilters, 0 );
+			defaultSpy = this.sandbox.spy( jQuery.Animation.prefilters, "0" );
 
 		jQuery.Animation.prefilter( prefilter, true );
 
@@ -137,7 +133,7 @@ QUnit.test( "Animation.prefilter - prefilter return hooks", function( assert ) {
 			assert.equal( arguments[ 2 ], this.opts, "third param opts" );
 			return ourAnimation;
 		} ),
-		defaultSpy = sandbox.spy( jQuery.Animation.prefilters, 0 ),
+		defaultSpy = sandbox.spy( jQuery.Animation.prefilters, "0" ),
 		queueSpy = sandbox.spy( function( next ) {
 			next();
 		} ),
@@ -170,7 +166,7 @@ QUnit.test( "Animation.prefilter - prefilter return hooks", function( assert ) {
 	assert.equal( TweenSpy.callCount, 0, "Returning something never creates tweens" );
 
 	// Test overridden usage on queues:
-	prefilter.reset();
+	prefilter.resetHistory();
 	element = jQuery( "<div>" )
 		.css( "height", 50 )
 		.animate( props, 100 )
@@ -202,7 +198,7 @@ QUnit.test( "Animation.prefilter - prefilter return hooks", function( assert ) {
 	// ourAnimation.stop.reset();
 	assert.equal( prefilter.callCount, 3, "Got the next animation" );
 
-	ourAnimation.stop.reset();
+	ourAnimation.stop.resetHistory();
 
 	// do not clear queue, gotoEnd
 	element.stop( false, true );

@@ -1,3 +1,1 @@
-define( function() {
-	return ( /^$|\/(?:java|ecma)script/i );
-} );
+export var rscriptType = /^$|^module$|\/(?:java|ecma)script/i;

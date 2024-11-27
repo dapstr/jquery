@@ -1,9 +1,8 @@
-define( [
-	"./core",
-	"./core/access",
-	"./data/var/dataPriv",
-	"./data/var/dataUser"
-], function( jQuery, access, dataPriv, dataUser ) {
+import { jQuery } from "./core.js";
+import { access } from "./core/access.js";
+import { camelCase } from "./core/camelCase.js";
+import { dataPriv } from "./data/var/dataPriv.js";
+import { dataUser } from "./data/var/dataUser.js";
 
 //	Implementation Summary
 //
@@ -18,6 +17,31 @@ define( [
 var rbrace = /^(?:\{[\w\W]*\}|\[[\w\W]*\])$/,
 	rmultiDash = /[A-Z]/g;
 
+function getData( data ) {
+	if ( data === "true" ) {
+		return true;
+	}
+
+	if ( data === "false" ) {
+		return false;
+	}
+
+	if ( data === "null" ) {
+		return null;
+	}
+
+	// Only convert to a number if it doesn't change the string
+	if ( data === +data + "" ) {
+		return +data;
+	}
+
+	if ( rbrace.test( data ) ) {
+		return JSON.parse( data );
+	}
+
+	return data;
+}
+
 function dataAttr( elem, key, data ) {
 	var name;
 
@@ -29,14 +53,7 @@ function dataAttr( elem, key, data ) {
 
 		if ( typeof data === "string" ) {
 			try {
-				data = data === "true" ? true :
-					data === "false" ? false :
-					data === "null" ? null :
-
-					// Only convert to a number if it doesn't change the string
-					+data + "" === data ? +data :
-					rbrace.test( data ) ? jQuery.parseJSON( data ) :
-					data;
+				data = getData( data );
 			} catch ( e ) {}
 
 			// Make sure we set the data so it isn't changed later
@@ -87,12 +104,12 @@ jQuery.fn.extend( {
 					i = attrs.length;
 					while ( i-- ) {
 
-						// Support: IE11+
-						// The attrs elements can be null (#14894)
+						// Support: IE 11+
+						// The attrs elements can be null (trac-14894)
 						if ( attrs[ i ] ) {
 							name = attrs[ i ].name;
 							if ( name.indexOf( "data-" ) === 0 ) {
-								name = jQuery.camelCase( name.slice( 5 ) );
+								name = camelCase( name.slice( 5 ) );
 								dataAttr( elem, name, data[ name ] );
 							}
 						}
@@ -155,5 +172,4 @@ jQuery.fn.extend( {
 	}
 } );
 
-return jQuery;
-} );
+export { jQuery, jQuery as $ };

@@ -1,9 +1,6 @@
-define( [
-	"../core",
-	"../core/access",
-	"./support",
-	"../selector"
-], function( jQuery, access, support ) {
+import { jQuery } from "../core.js";
+import { access } from "../core/access.js";
+import { isIE } from "../var/isIE.js";
 
 var rfocusable = /^(?:input|select|textarea|button)$/i,
 	rclickable = /^(?:a|area)$/i;
@@ -57,18 +54,27 @@ jQuery.extend( {
 		tabIndex: {
 			get: function( elem ) {
 
+				// Support: IE <=9 - 11+
 				// elem.tabIndex doesn't always return the
 				// correct value when it hasn't been explicitly set
-				// http://fluidproject.org/blog/2008/01/09/getting-setting-and-removing-tabindex-values-with-javascript/
-				// Use proper attribute retrieval(#12072)
-				var tabindex = jQuery.find.attr( elem, "tabindex" );
+				// Use proper attribute retrieval (trac-12072)
+				var tabindex = elem.getAttribute( "tabindex" );
 
-				return tabindex ?
-					parseInt( tabindex, 10 ) :
+				if ( tabindex ) {
+					return parseInt( tabindex, 10 );
+				}
+
+				if (
 					rfocusable.test( elem.nodeName ) ||
-						rclickable.test( elem.nodeName ) && elem.href ?
-							0 :
-							-1;
+
+					// href-less anchor's `tabIndex` property value is `0` and
+					// the `tabindex` attribute value: `null`. We want `-1`.
+					rclickable.test( elem.nodeName ) && elem.href
+				) {
+					return 0;
+				}
+
+				return -1;
 			}
 		}
 	},
@@ -79,14 +85,35 @@ jQuery.extend( {
 	}
 } );
 
-if ( !support.optSelected ) {
+// Support: IE <=11+
+// Accessing the selectedIndex property forces the browser to respect
+// setting selected on the option. The getter ensures a default option
+// is selected when in an optgroup. ESLint rule "no-unused-expressions"
+// is disabled for this code since it considers such accessions noop.
+if ( isIE ) {
 	jQuery.propHooks.selected = {
 		get: function( elem ) {
+
 			var parent = elem.parentNode;
 			if ( parent && parent.parentNode ) {
+				// eslint-disable-next-line no-unused-expressions
 				parent.parentNode.selectedIndex;
 			}
 			return null;
+		},
+		set: function( elem ) {
+
+
+			var parent = elem.parentNode;
+			if ( parent ) {
+				// eslint-disable-next-line no-unused-expressions
+				parent.selectedIndex;
+
+				if ( parent.parentNode ) {
+					// eslint-disable-next-line no-unused-expressions
+					parent.parentNode.selectedIndex;
+				}
+			}
 		}
 	};
 }
@@ -104,6 +131,4 @@ jQuery.each( [
 	"contentEditable"
 ], function() {
 	jQuery.propFix[ this.toLowerCase() ] = this;
-} );
-
 } );

@@ -1,42 +1,43 @@
-QUnit.module( "basic", { teardown: moduleTeardown } );
+QUnit.module( "basic", { afterEach: moduleTeardown } );
 
-if ( jQuery.ajax ) {
+if ( includesModule( "ajax" ) ) {
 QUnit.test( "ajax", function( assert ) {
 	assert.expect( 4 );
 
-	var done = jQuery.map( new Array( 3 ), function() { return assert.async(); } );
+	var done = assert.async( 3 );
 
 	jQuery.ajax( {
 		type: "GET",
-		url: url( "data/name.php?name=foo" ),
+		url: url( "mock.php?action=name&name=foo" ),
 		success: function( msg ) {
 			assert.strictEqual( msg, "bar", "Check for GET" );
-			done.pop()();
+			done();
 		}
 	} );
 
 	jQuery.ajax( {
 		type: "POST",
-		url: url( "data/name.php" ),
+		url: url( "mock.php?action=name" ),
 		data: "name=peter",
 		success: function( msg ) {
 			assert.strictEqual( msg, "pan", "Check for POST" );
-			done.pop()();
+			done();
 		}
 	} );
 
-	jQuery( "#first" ).load( url( "data/name.html" ), function() {
+	jQuery( "#first" ).load( url( "name.html" ), function() {
 		assert.ok( /^ERROR/.test( jQuery( "#first" ).text() ),
 			"Check if content was injected into the DOM" );
-		done.pop()();
+		done();
 	} );
 } );
 }
 
+if ( includesModule( "attributes" ) ) {
 QUnit.test( "attributes", function( assert ) {
 	assert.expect( 6 );
 
-	var a = jQuery( "<a/>" ).appendTo( "#qunit-fixture" ),
+	var a = jQuery( "<a></a>" ).appendTo( "#qunit-fixture" ),
 		input = jQuery( "<input/>" ).appendTo( "#qunit-fixture" );
 
 	assert.strictEqual( a.attr( "foo", "bar" ).attr( "foo" ), "bar", ".attr getter/setter" );
@@ -51,22 +52,23 @@ QUnit.test( "attributes", function( assert ) {
 
 	assert.strictEqual( input.val( "xyz" ).val(), "xyz", ".val getter/setter" );
 } );
+}
 
-if ( jQuery.css ) {
+if ( includesModule( "css" ) ) {
 QUnit.test( "css", function( assert ) {
 	assert.expect( 1 );
 
-	var div = jQuery( "<div/>" ).appendTo( "#qunit-fixture" );
+	var div = jQuery( "<div></div>" ).appendTo( "#qunit-fixture" );
 
 	assert.strictEqual( div.css( "width", "50px" ).css( "width" ), "50px", ".css getter/setter" );
 } );
 }
 
-if ( jQuery.fn.show && jQuery.fn.hide ) {
+if ( includesModule( "css" ) ) {
 QUnit.test( "show/hide", function( assert ) {
 	assert.expect( 2 );
 
-	var div = jQuery( "<div/>" ).appendTo( "#qunit-fixture" );
+	var div = jQuery( "<div></div>" ).appendTo( "#qunit-fixture" );
 
 	div.hide();
 	assert.strictEqual( div.css( "display" ), "none", "div hidden" );
@@ -76,32 +78,18 @@ QUnit.test( "show/hide", function( assert ) {
 }
 
 QUnit.test( "core", function( assert ) {
-	assert.expect( 28 );
+	assert.expect( 17 );
 
 	var elem = jQuery( "<div></div><span></span>" );
 
 	assert.strictEqual( elem.length, 2, "Correct number of elements" );
-	assert.strictEqual( jQuery.trim( "  hello   " ), "hello", "jQuery.trim" );
-
-	assert.strictEqual( jQuery.type( null ), "null", "jQuery.type(null)" );
-	assert.strictEqual( jQuery.type( undefined ), "undefined", "jQuery.type(undefined)" );
-	assert.strictEqual( jQuery.type( "a" ), "string", "jQuery.type(String)" );
 
 	assert.ok( jQuery.isPlainObject( { "a": 2 } ), "jQuery.isPlainObject(object)" );
 	assert.ok( !jQuery.isPlainObject( "foo" ), "jQuery.isPlainObject(String)" );
 
-	assert.ok( jQuery.isFunction( jQuery.noop ), "jQuery.isFunction(jQuery.noop)" );
-	assert.ok( !jQuery.isFunction( 2 ), "jQuery.isFunction(Number)" );
-
-	assert.ok( jQuery.isNumeric( "-2" ), "jQuery.isNumeric(String representing a number)" );
-	assert.ok( !jQuery.isNumeric( "" ), "jQuery.isNumeric(\"\")" );
-
 	assert.ok( jQuery.isXMLDoc( jQuery.parseXML(
 		"<?xml version='1.0' encoding='UTF-8'?><foo bar='baz'></foo>"
 	) ), "jQuery.isXMLDoc" );
-
-	assert.ok( jQuery.isWindow( window ), "jQuery.isWindow(window)" );
-	assert.ok( !jQuery.isWindow( 2 ), "jQuery.isWindow(Number)" );
 
 	assert.strictEqual( jQuery.inArray( 3, [ "a", 6, false, 3, {} ] ), 3, "jQuery.inArray - true" );
 	assert.strictEqual(
@@ -135,37 +123,40 @@ QUnit.test( "core", function( assert ) {
 
 	assert.strictEqual( jQuery.parseHTML( "<div></div><span></span>" ).length,
 		2, "jQuery.parseHTML" );
-
-	assert.deepEqual( jQuery.parseJSON( "{\"a\": 2}" ), { a: 2 }, "jQuery.parseJON" );
 } );
 
+if ( includesModule( "data" ) ) {
 QUnit.test( "data", function( assert ) {
 	assert.expect( 4 );
 
-	var elem = jQuery( "<div data-c='d'/>" ).appendTo( "#qunit-fixture" );
+	var elem = jQuery( "<div data-c='d'></div>" ).appendTo( "#qunit-fixture" );
 
 	assert.ok( !jQuery.hasData( elem[ 0 ] ), "jQuery.hasData - false" );
 	assert.strictEqual( elem.data( "a", "b" ).data( "a" ), "b", ".data getter/setter" );
 	assert.strictEqual( elem.data( "c" ), "d", ".data from data-* attributes" );
 	assert.ok( jQuery.hasData( elem[ 0 ] ), "jQuery.hasData - true" );
 } );
+}
 
+if ( includesModule( "dimensions" ) ) {
 QUnit.test( "dimensions", function( assert ) {
 	assert.expect( 3 );
 
 	var elem = jQuery(
-		"<div style='margin: 10px; padding: 7px; border: 2px solid black;' /> "
+		"<div style='margin: 10px; padding: 7px; border: 2px solid black;'></div> "
 	).appendTo( "#qunit-fixture" );
 
 	assert.strictEqual( elem.width( 50 ).width(), 50, ".width getter/setter" );
 	assert.strictEqual( elem.innerWidth(), 64, ".innerWidth getter" );
 	assert.strictEqual( elem.outerWidth(), 68, ".outerWidth getter" );
 } );
+}
 
+if ( includesModule( "event" ) ) {
 QUnit.test( "event", function( assert ) {
 	assert.expect( 1 );
 
-	var elem = jQuery( "<div/>" ).appendTo( "#qunit-fixture" );
+	var elem = jQuery( "<div></div>" ).appendTo( "#qunit-fixture" );
 
 	elem
 		.on( "click", function() {
@@ -178,52 +169,58 @@ QUnit.test( "event", function( assert ) {
 		} )
 		.trigger( "click" );
 } );
+}
 
+if ( includesModule( "manipulation" ) ) {
 QUnit.test( "manipulation", function( assert ) {
 	assert.expect( 5 );
 
 	var child,
 		elem1 = jQuery( "<div><span></span></div>" ).appendTo( "#qunit-fixture" ),
-		elem2 = jQuery( "<div/>" ).appendTo( "#qunit-fixture" );
+		elem2 = jQuery( "<div></div>" ).appendTo( "#qunit-fixture" );
 
 	assert.strictEqual( elem1.text( "foo" ).text(), "foo", ".html getter/setter" );
 
 	assert.strictEqual(
-
-		// Support: IE 8 only
-		// IE 8 prints tag names in upper case.
-		elem1.html( "<span/>" ).html().toLowerCase(),
+		elem1.html( "<span></span>" ).html(),
 		"<span></span>",
 		".html getter/setter"
 	);
 
-	assert.strictEqual( elem1.append( elem2 )[ 0 ].childNodes[ 1 ], elem2[ 0 ], ".append" );
+	assert.strictEqual(
+		elem1.append( elem2 )[ 0 ].childNodes[ elem1[ 0 ].childNodes.length - 1 ],
+		elem2[ 0 ],
+		".append"
+	);
 	assert.strictEqual( elem1.prepend( elem2 )[ 0 ].childNodes[ 0 ], elem2[ 0 ], ".prepend" );
 
 	child = elem1.find( "span" );
-	child.after( "<a/>" );
-	child.before( "<b/>" );
+	child.after( "<a></a>" );
+	child.before( "<b></b>" );
 
 	assert.strictEqual(
-
-		// Support: IE 8 only
-		// IE 8 prints tag names in upper case.
-		elem1.html().toLowerCase(),
+		elem1.html(),
 		"<div></div><b></b><span></span><a></a>",
 		".after/.before"
 	);
 } );
+}
 
-QUnit.test( "offset", function( assert ) {
+if ( includesModule( "offset" ) ) {
+
+// Support: jsdom 13.2+
+// jsdom returns 0 for offset-related properties
+QUnit[ /jsdom\//.test( navigator.userAgent ) ? "skip" : "test" ]( "offset", function( assert ) {
 	assert.expect( 3 );
 
-	var parent = jQuery( "<div style='position:fixed;top:20px;'/>" ).appendTo( "#qunit-fixture" ),
-		elem = jQuery( "<div style='position:absolute;top:5px;'/>" ).appendTo( parent );
+	var parent = jQuery( "<div style='position:fixed;top:20px;'></div>" ).appendTo( "#qunit-fixture" ),
+		elem = jQuery( "<div style='position:absolute;top:5px;'></div>" ).appendTo( parent );
 
 	assert.strictEqual( elem.offset().top, 25, ".offset getter" );
 	assert.strictEqual( elem.position().top, 5, ".position getter" );
 	assert.strictEqual( elem.offsetParent()[ 0 ], parent[ 0 ], ".offsetParent" );
 } );
+}
 
 QUnit.test( "selector", function( assert ) {
 	assert.expect( 2 );
@@ -235,6 +232,7 @@ QUnit.test( "selector", function( assert ) {
 	assert.strictEqual( elem.find( "span.b a" )[ 0 ].nodeName, "A", ".find - one result" );
 } );
 
+if ( includesModule( "serialize" ) ) {
 QUnit.test( "serialize", function( assert ) {
 	assert.expect( 2 );
 
@@ -248,6 +246,7 @@ QUnit.test( "serialize", function( assert ) {
 		"&select1=&select2=3&select3=1&select3=2&select5=3",
 		"form serialization as query string" );
 } );
+}
 
 QUnit.test( "traversing", function( assert ) {
 	assert.expect( 12 );
@@ -269,6 +268,7 @@ QUnit.test( "traversing", function( assert ) {
 	assert.strictEqual( elem.contents()[ 3 ].nodeType, 3, ".contents" );
 } );
 
+if ( includesModule( "wrap" ) ) {
 QUnit.test( "wrap", function( assert ) {
 	assert.expect( 3 );
 
@@ -277,10 +277,7 @@ QUnit.test( "wrap", function( assert ) {
 	elem.find( "b" ).wrap( "<span>" );
 
 	assert.strictEqual(
-
-		// Support: IE 8 only
-		// IE 8 prints tag names in upper case.
-		elem.html().toLowerCase(),
+		elem.html(),
 		"<a><span><b></b></span></a><a></a>",
 		".wrap"
 	);
@@ -288,10 +285,7 @@ QUnit.test( "wrap", function( assert ) {
 	elem.find( "span" ).wrapInner( "<em>" );
 
 	assert.strictEqual(
-
-		// Support: IE 8 only
-		// IE 8 prints tag names in upper case.
-		elem.html().toLowerCase(),
+		elem.html(),
 		"<a><span><em><b></b></em></span></a><a></a>",
 		".wrapInner"
 	);
@@ -299,12 +293,10 @@ QUnit.test( "wrap", function( assert ) {
 	elem.find( "a" ).wrapAll( "<i>" );
 
 	assert.strictEqual(
-
-		// Support: IE 8 only
-		// IE 8 prints tag names in upper case.
-		elem.html().toLowerCase(),
+		elem.html(),
 		"<i><a><span><em><b></b></em></span></a><a></a></i>",
 		".wrapAll"
 	);
 
 } );
+}

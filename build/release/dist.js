@@ -1,111 +1,126 @@
-module.exports = function( Release, files, complete ) {
+import { readFile, writeFile } from "node:fs/promises";
+import util from "node:util";
+import { argv } from "node:process";
+import { exec as nodeExec } from "node:child_process";
+import { rimraf } from "rimraf";
 
-	var
-		fs = require( "fs" ),
-		shell = require( "shelljs" ),
-		pkg = require( Release.dir.repo + "/package.json" ),
-		distRemote = Release.remote
+const pkg = JSON.parse( await readFile( "./package.json", "utf8" ) );
 
-			// For local and github dists
-			.replace( /jquery(\.git|$)/, "jquery-dist$1" ),
+const exec = util.promisify( nodeExec );
 
-		// These files are included with the distribution
-		extras = [
-			"src",
-			"LICENSE.txt",
-			"AUTHORS.txt",
-			"package.json"
-		];
+const version = argv[ 2 ];
+const blogURL = argv[ 3 ];
 
-	/**
-	 * Clone the distribution repo
-	 */
-	function clone() {
-		Release.chdir( Release.dir.base );
-		Release.dir.dist = Release.dir.base + "/dist";
+if ( !version ) {
+	throw new Error( "No version specified" );
+}
 
-		console.log( "Using distribution repo: ", distRemote );
-		Release.exec( "git clone " + distRemote + " " + Release.dir.dist,
-			"Error cloning repo." );
+if ( !blogURL || !blogURL.startsWith( "https://blog.jquery.com/" ) ) {
+	throw new Error( "Invalid blog post URL" );
+}
 
-		// Distribution always works on master
-		Release.chdir( Release.dir.dist );
-		Release.exec( "git checkout master", "Error checking out branch." );
-		console.log();
-	}
+// The dist repo is cloned during release
+const distRepoFolder = "tmp/release/dist";
 
-	/**
-	 * Generate bower file for jquery-dist
-	 */
-	function generateBower() {
-		return JSON.stringify( {
+// Files to be included in the dist repo.
+// README.md and bower.json are generated.
+// package.json is a simplified version of the original.
+const files = [
+	"dist",
+	"dist-module",
+	"src",
+	"LICENSE.txt",
+	"AUTHORS.txt",
+	"changelog.md"
+];
+
+async function generateBower() {
+	return JSON.stringify(
+		{
 			name: pkg.name,
 			main: pkg.main,
 			license: "MIT",
-			ignore: [
-				"package.json"
-			],
+			ignore: [ "package.json" ],
 			keywords: pkg.keywords
-		}, null, 2 );
-	}
+		},
+		null,
+		2
+	);
+}
 
-	/**
-	 * Copy necessary files over to the dist repo
-	 */
-	function copy() {
+async function generateReadme() {
+	const readme = await readFile(
+		"./build/fixtures/README.md",
+		"utf8"
+	);
 
-		// Copy dist files
-		var distFolder = Release.dir.dist + "/dist";
-		shell.mkdir( "-p", distFolder );
-		files.forEach( function( file ) {
-			shell.cp( "-f", Release.dir.repo + "/" + file, distFolder );
-		} );
+	return readme
+		.replace( /@VERSION/g, version )
+		.replace( /@BLOG_POST_LINK/g, blogURL );
+}
 
-		// Copy other files
-		extras.forEach( function( file ) {
-			shell.cp( "-rf", Release.dir.repo + "/" + file, Release.dir.dist );
-		} );
+/**
+ * Copy necessary files over to the dist repo
+ */
+async function copyFiles() {
 
-		// Write generated bower file
-		fs.writeFileSync( Release.dir.dist + "/bower.json", generateBower() );
+	// Remove any extraneous files before copy
+	await rimraf( [
+		`${ distRepoFolder }/dist`,
+		`${ distRepoFolder }/dist-module`,
+		`${ distRepoFolder }/src`
+	] );
 
-		console.log( "Adding files to dist..." );
-		Release.exec( "git add .", "Error adding files." );
-		Release.exec(
-			"git commit -m 'Release " + Release.newVersion + "'",
-			"Error committing files."
-		);
-		console.log();
+	// Copy all files
+	await Promise.all(
+		files.map( function( path ) {
+			console.log( `Copying ${ path }...` );
+			return exec( `cp -rf ${ path } ${ distRepoFolder }/${ path }` );
+		} )
+	);
 
-		console.log( "Tagging release on dist..." );
-		Release.exec( "git tag " + Release.newVersion,
-			"Error tagging " + Release.newVersion + " on dist repo." );
-		Release.tagTime = Release.exec( "git log -1 --format='%ad'",
-			"Error getting tag timestamp." ).trim();
-	}
+	// Remove the wrapper from the dist repo
+	await rimraf( [
+		`${ distRepoFolder }/src/wrapper.js`
+	] );
 
-	/**
-	 * Push files to dist repo
-	 */
-	function push() {
-		Release.chdir( Release.dir.dist );
+	// Set the version in src/core.js
+	const core = await readFile( `${ distRepoFolder }/src/core.js`, "utf8" );
+	await writeFile(
+		`${ distRepoFolder }/src/core.js`,
+		core.replace( /@VERSION/g, version )
+	);
 
-		console.log( "Pushing release to dist repo..." );
-		Release.exec( "git push " + distRemote + " master --tags",
-			"Error pushing master and tags to git repo." );
+	// Write generated README
+	console.log( "Generating README.md..." );
+	const readme = await generateReadme();
+	await writeFile( `${ distRepoFolder }/README.md`, readme );
 
-		// Set repo for npm publish
-		Release.dir.origRepo = Release.dir.repo;
-		Release.dir.repo = Release.dir.dist;
-	}
+	// Write generated Bower file
+	console.log( "Generating bower.json..." );
+	const bower = await generateBower();
+	await writeFile( `${ distRepoFolder }/bower.json`, bower );
 
-	Release.walk( [
-		Release._section( "Copy files to distribution repo" ),
-		clone,
-		copy,
-		Release.confirmReview,
+	// Write simplified package.json
+	console.log( "Writing package.json..." );
+	await writeFile(
+		`${ distRepoFolder }/package.json`,
+		JSON.stringify(
+			{
+				...pkg,
+				scripts: undefined,
+				dependencies: undefined,
+				devDependencies: undefined,
+				commitplease: undefined
+			},
+			null,
+			2
 
-		Release._section( "Pushing files to distribution repo" ),
-		push
-	], complete );
-};
+		// Add final newline
+		) + "\n"
+	);
+
+	console.log( "Files copied to dist repo." );
+}
+
+copyFiles();

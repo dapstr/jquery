@@ -1,5 +1,3 @@
-define( [
-	"./class2type"
-], function( class2type ) {
-	return class2type.toString;
-} );
+import { class2type } from "./class2type.js";
+
+export var toString = class2type.toString;

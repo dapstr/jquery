@@ -1,7 +1,8 @@
-define( [
-	"../core",
-	"../css"
-], function( jQuery ) {
+import { jQuery } from "../core.js";
+import { isAutoPx } from "../css/isAutoPx.js";
+import { finalPropName } from "../css/finalPropName.js";
+
+import "../css.js";
 
 function Tween( elem, options, prop, end, easing ) {
 	return new Tween.prototype.init( elem, options, prop, end, easing );
@@ -17,7 +18,7 @@ Tween.prototype = {
 		this.options = options;
 		this.start = this.now = this.cur();
 		this.end = end;
-		this.unit = unit || ( jQuery.cssNumber[ prop ] ? "" : "px" );
+		this.unit = unit || ( isAutoPx( prop ) ? "px" : "" );
 	},
 	cur: function() {
 		var hooks = Tween.propHooks[ this.prop ];
@@ -27,12 +28,17 @@ Tween.prototype = {
 			Tween.propHooks._default.get( this );
 	},
 	run: function( percent ) {
-		var hooks = Tween.propHooks[ this.prop ];
+		var eased,
+			hooks = Tween.propHooks[ this.prop ];
 
-		this.pos = this.options.duration ?
-			jQuery.easing[ this.easing ]( percent ) :
-			percent;
-		this.now = ( this.end - this.start ) * this.pos + this.start;
+		if ( this.options.duration ) {
+			this.pos = eased = jQuery.easing[ this.easing ](
+				percent, this.options.duration * percent, 0, 1, this.options.duration
+			);
+		} else {
+			this.pos = eased = percent;
+		}
+		this.now = ( this.end - this.start ) * eased + this.start;
 
 		if ( this.options.step ) {
 			this.options.step.call( this.elem, this.now, this );
@@ -77,23 +83,13 @@ Tween.propHooks = {
 			// Use .style if available and use plain properties where available.
 			if ( jQuery.fx.step[ tween.prop ] ) {
 				jQuery.fx.step[ tween.prop ]( tween );
-			} else if ( tween.elem.nodeType === 1 &&
-				( tween.elem.style[ jQuery.cssProps[ tween.prop ] ] != null ||
-					jQuery.cssHooks[ tween.prop ] ) ) {
+			} else if ( tween.elem.nodeType === 1 && (
+				jQuery.cssHooks[ tween.prop ] ||
+					tween.elem.style[ finalPropName( tween.prop ) ] != null ) ) {
 				jQuery.style( tween.elem, tween.prop, tween.now + tween.unit );
 			} else {
 				tween.elem[ tween.prop ] = tween.now;
 			}
-		}
-	}
-};
-
-// Support: IE9
-// Panic based approach to setting things on disconnected nodes
-Tween.propHooks.scrollTop = Tween.propHooks.scrollLeft = {
-	set: function( tween ) {
-		if ( tween.elem.nodeType && tween.elem.parentNode ) {
-			tween.elem[ tween.prop ] = tween.now;
 		}
 	}
 };
@@ -110,7 +106,5 @@ jQuery.easing = {
 
 jQuery.fx = Tween.prototype.init;
 
-// Back Compat <1.8 extension point
+// Back compat <1.8 extension point
 jQuery.fx.step = {};
-
-} );

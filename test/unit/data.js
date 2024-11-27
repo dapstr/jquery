@@ -1,4 +1,4 @@
-QUnit.module( "data", { teardown: moduleTeardown } );
+QUnit.module( "data", { afterEach: moduleTeardown } );
 
 QUnit.test( "expando", function( assert ) {
 	assert.expect( 1 );
@@ -74,14 +74,14 @@ function dataTests( elem, assert ) {
 
 	assert.strictEqual( jQuery.hasData( elem ), false, "jQuery.hasData agrees no data exists even when an empty data obj exists" );
 
-	dataObj[ "foo" ] = "bar";
+	dataObj.foo = "bar";
 	assert.equal( jQuery.data( elem, "foo" ), "bar", "Data is readable by jQuery.data when set directly on a returned data object" );
 
 	assert.strictEqual( jQuery.hasData( elem ), true, "jQuery.hasData agrees data exists when data exists" );
 
 	jQuery.data( elem, "foo", "baz" );
 	assert.equal( jQuery.data( elem, "foo" ), "baz", "Data can be changed by jQuery.data" );
-	assert.equal( dataObj[ "foo" ], "baz", "Changes made through jQuery.data propagate to referenced data object" );
+	assert.equal( dataObj.foo, "baz", "Changes made through jQuery.data propagate to referenced data object" );
 
 	jQuery.data( elem, "foo", undefined );
 	assert.equal( jQuery.data( elem, "foo" ), "baz", "Data is not unset by passing undefined to jQuery.data" );
@@ -132,11 +132,6 @@ QUnit.test( "jQuery.data(div)", function( assert ) {
 	var div = document.createElement( "div" );
 
 	dataTests( div, assert );
-
-	// We stored one key in the private data
-	// assert that nothing else was put in there, and that that
-	// one stayed there.
-	assert.expectJqData( this, div, "foo" );
 } );
 
 QUnit.test( "jQuery.data({})", function( assert ) {
@@ -148,7 +143,7 @@ QUnit.test( "jQuery.data({})", function( assert ) {
 QUnit.test( "jQuery.data(window)", function( assert ) {
 	assert.expect( 25 );
 
-	// remove bound handlers from window object to stop potential false positives caused by fix for #5280 in
+	// remove bound handlers from window object to stop potential false positives caused by fix for trac-5280 in
 	// transports/xhr.js
 	jQuery( window ).off( "unload" );
 
@@ -159,8 +154,6 @@ QUnit.test( "jQuery.data(document)", function( assert ) {
 	assert.expect( 25 );
 
 	dataTests( document, assert );
-
-	assert.expectJqData( this, document, "foo" );
 } );
 
 QUnit.test( "jQuery.data(<embed>)", function( assert ) {
@@ -179,7 +172,7 @@ QUnit.test( "jQuery.data(object/flash)", function( assert ) {
 } );
 
 // attempting to access the data of an undefined jQuery element should be undefined
-QUnit.test( "jQuery().data() === undefined (#14101)", function( assert ) {
+QUnit.test( "jQuery().data() === undefined (trac-14101)", function( assert ) {
 	assert.expect( 2 );
 
 	assert.strictEqual( jQuery().data(), undefined );
@@ -208,7 +201,7 @@ QUnit.test( ".data()", function( assert ) {
 
 	dataObj = jQuery.extend( true, {}, jQuery( obj ).data() );
 
-	assert.deepEqual( dataObj, { "foo": "baz" }, "Retrieve data object from a wrapped JS object (#7524)" );
+	assert.deepEqual( dataObj, { "foo": "baz" }, "Retrieve data object from a wrapped JS object (trac-7524)" );
 } );
 
 function testDataTypes( $obj, assert ) {
@@ -239,7 +232,7 @@ QUnit.test( "jQuery(Element).data(String, Object).data(String)", function( asser
 	assert.strictEqual( div.data( "test" ), undefined, "No data exists initially" );
 	assert.strictEqual( div.data( "test", "success" ).data( "test" ), "success", "Data added" );
 	assert.strictEqual( div.data( "test", "overwritten" ).data( "test" ), "overwritten", "Data overwritten" );
-	assert.strictEqual( div.data( "test", undefined ).data( "test" ), "overwritten", ".data(key,undefined) does nothing but is chainable (#5571)" );
+	assert.strictEqual( div.data( "test", undefined ).data( "test" ), "overwritten", ".data(key,undefined) does nothing but is chainable (trac-5571)" );
 	assert.strictEqual( div.data( "notexist" ), undefined, "No data exists for unset key" );
 	testDataTypes( div, assert );
 
@@ -249,7 +242,7 @@ QUnit.test( "jQuery(Element).data(String, Object).data(String)", function( asser
 QUnit.test( "jQuery(plain Object).data(String, Object).data(String)", function( assert ) {
 	assert.expect( 16 );
 
-	// #3748
+	// trac-3748
 	var $obj = jQuery( { exists: true } );
 	assert.strictEqual( $obj.data( "nothing" ), undefined, "Non-existent data returns undefined" );
 	assert.strictEqual( $obj.data( "exists" ), undefined, "Object properties are not returned as data" );
@@ -260,7 +253,7 @@ QUnit.test( "jQuery(plain Object).data(String, Object).data(String)", function( 
 	assert.deepEqual( $obj[ 0 ], { exists: true }, "removeData does not clear the object" );
 } );
 
-QUnit.test( ".data(object) does not retain references. #13815", function( assert ) {
+QUnit.test( ".data(object) does not retain references. trac-13815", function( assert ) {
 	assert.expect( 2 );
 
 	var $divs = jQuery( "<div></div><div></div>" ).appendTo( "#qunit-fixture" );
@@ -277,7 +270,7 @@ QUnit.test( "data-* attributes", function( assert ) {
 
 	var prop, i, l, metadata, elem,
 		obj, obj2, check, num, num2,
-		parseJSON = jQuery.parseJSON,
+		parseJSON = JSON.parse,
 		div = jQuery( "<div>" ),
 		child = jQuery( "<div data-myobj='old data' data-ignored=\"DOM\" data-other='test' data-foo-42='boosh'></div>" ),
 		dummy = jQuery( "<div data-myobj='old data' data-ignored=\"DOM\" data-other='test' data-foo-42='boosh'></div>" );
@@ -297,7 +290,7 @@ QUnit.test( "data-* attributes", function( assert ) {
 
 	child.appendTo( "#qunit-fixture" );
 	assert.equal( child.data( "myobj" ), "old data", "Value accessed from data-* attribute" );
-	assert.equal( child.data( "foo-42" ), "boosh", "camelCasing does not affect numbers (#1751)" );
+	assert.equal( child.data( "foo-42" ), "boosh", "camelCasing does not affect numbers (gh-1751)" );
 
 	child.data( "myobj", "replaced" );
 	assert.equal( child.data( "myobj" ), "replaced", "Original data overwritten" );
@@ -324,6 +317,7 @@ QUnit.test( "data-* attributes", function( assert ) {
 
 	assert.equal( num, check.length, "Make sure that the right number of properties came through." );
 
+	/* eslint-disable-next-line no-unused-vars */
 	for ( prop in obj2 ) {
 		num2++;
 	}
@@ -336,7 +330,7 @@ QUnit.test( "data-* attributes", function( assert ) {
 
 	// attribute parsing
 	i = 0;
-	jQuery.parseJSON = function() {
+	JSON.parse = function() {
 		i++;
 		return parseJSON.apply( this, arguments );
 	};
@@ -389,7 +383,7 @@ QUnit.test( "data-* attributes", function( assert ) {
 	assert.strictEqual( child.data( "string" ), "test", "Typical string read from attribute" );
 	assert.equal( i, 2, "Correct number of JSON parse attempts when reading from attributes" );
 
-	jQuery.parseJSON = parseJSON;
+	JSON.parse = parseJSON;
 	child.remove();
 
 	// tests from metadata plugin
@@ -405,11 +399,11 @@ QUnit.test( "data-* attributes", function( assert ) {
 			break;
 		case 2:
 			assert.equal( jQuery( elem ).data( "zoooo" ), "bar", "Check zoooo property" );
-			assert.deepEqual( jQuery( elem ).data( "bar" ), { "test":"baz" }, "Check bar property" );
+			assert.deepEqual( jQuery( elem ).data( "bar" ), { "test": "baz" }, "Check bar property" );
 			break;
 		case 3:
 			assert.equal( jQuery( elem ).data( "number" ), true, "Check number property" );
-			assert.deepEqual( jQuery( elem ).data( "stuff" ), [ 2,8 ], "Check stuff property" );
+			assert.deepEqual( jQuery( elem ).data( "stuff" ), [ 2, 8 ], "Check stuff property" );
 			break;
 		default:
 			assert.ok( false, [ "Assertion failed on index ", index, ", with data" ].join( "" ) );
@@ -427,19 +421,19 @@ QUnit.test( ".data(Object)", function( assert ) {
 	assert.expect( 4 );
 
 	var obj, jqobj,
-		div = jQuery( "<div/>" );
+		div = jQuery( "<div></div>" );
 
 	div.data( { "test": "in", "test2": "in2" } );
 	assert.equal( div.data( "test" ), "in", "Verify setting an object in data" );
 	assert.equal( div.data( "test2" ), "in2", "Verify setting an object in data" );
 
-	obj = { test:"unset" };
+	obj = { test: "unset" };
 	jqobj = jQuery( obj );
 
 	jqobj.data( "test", "unset" );
 	jqobj.data( { "test": "in", "test2": "in2" } );
-	assert.equal( jQuery.data( obj )[ "test" ], "in", "Verify setting an object on an object extends the data object" );
-	assert.equal( obj[ "test2" ], undefined, "Verify setting an object on an object does not extend the object" );
+	assert.equal( jQuery.data( obj ).test, "in", "Verify setting an object on an object extends the data object" );
+	assert.equal( obj.test2, undefined, "Verify setting an object on an object does not extend the object" );
 
 	// manually clean up detached elements
 	div.remove();
@@ -513,16 +507,14 @@ QUnit.test( ".removeData()", function( assert ) {
 	assert.equal( div.data( "test.foo" ), undefined, "Make sure data is intact" );
 } );
 
-if ( window.JSON && window.JSON.stringify ) {
-	QUnit.test( "JSON serialization (#8108)", function( assert ) {
-		assert.expect( 1 );
+QUnit.test( "JSON serialization (trac-8108)", function( assert ) {
+	assert.expect( 1 );
 
-		var obj = { "foo": "bar" };
-		jQuery.data( obj, "hidden", true );
+	var obj = { "foo": "bar" };
+	jQuery.data( obj, "hidden", true );
 
-		assert.equal( JSON.stringify( obj ), "{\"foo\":\"bar\"}", "Expando is hidden from JSON.stringify" );
-	} );
-}
+	assert.equal( JSON.stringify( obj ), "{\"foo\":\"bar\"}", "Expando is hidden from JSON.stringify" );
+} );
 
 QUnit.test( ".data should follow html5 specification regarding camel casing", function( assert ) {
 	assert.expect( 12 );
@@ -530,12 +522,12 @@ QUnit.test( ".data should follow html5 specification regarding camel casing", fu
 	var div = jQuery( "<div id='myObject' data-w-t-f='ftw' data-big-a-little-a='bouncing-b' data-foo='a' data-foo-bar='b' data-foo-bar-baz='c'></div>" )
 		.prependTo( "body" );
 
-	assert.equal( div.data()[ "wTF" ], "ftw", "Verify single letter data-* key" );
-	assert.equal( div.data()[ "bigALittleA" ], "bouncing-b", "Verify single letter mixed data-* key" );
+	assert.equal( div.data().wTF, "ftw", "Verify single letter data-* key" );
+	assert.equal( div.data().bigALittleA, "bouncing-b", "Verify single letter mixed data-* key" );
 
-	assert.equal( div.data()[ "foo" ], "a", "Verify single word data-* key" );
-	assert.equal( div.data()[ "fooBar" ], "b", "Verify multiple word data-* key" );
-	assert.equal( div.data()[ "fooBarBaz" ], "c", "Verify multiple word data-* key" );
+	assert.equal( div.data().foo, "a", "Verify single word data-* key" );
+	assert.equal( div.data().fooBar, "b", "Verify multiple word data-* key" );
+	assert.equal( div.data().fooBarBaz, "c", "Verify multiple word data-* key" );
 
 	assert.equal( div.data( "foo" ), "a", "Verify single word data-* key" );
 	assert.equal( div.data( "fooBar" ), "b", "Verify multiple word data-* key" );
@@ -556,7 +548,7 @@ QUnit.test( ".data should not miss preset data-* w/ hyphenated property names", 
 
 	assert.expect( 2 );
 
-	var div = jQuery( "<div/>", { id: "hyphened" } ).appendTo( "#qunit-fixture" ),
+	var div = jQuery( "<div></div>", { id: "hyphened" } ).appendTo( "#qunit-fixture" ),
 		test = {
 			"camelBar": "camelBar",
 			"hyphen-foo": "hyphen-foo"
@@ -569,11 +561,11 @@ QUnit.test( ".data should not miss preset data-* w/ hyphenated property names", 
 	} );
 } );
 
-QUnit.test( "jQuery.data should not miss data-* w/ hyphenated property names #14047", function( assert ) {
+QUnit.test( "jQuery.data should not miss data-* w/ hyphenated property names trac-14047", function( assert ) {
 
 	assert.expect( 1 );
 
-	var div = jQuery( "<div/>" );
+	var div = jQuery( "<div></div>" );
 
 	div.data( "foo-bar", "baz" );
 
@@ -585,14 +577,14 @@ QUnit.test( ".data should not miss attr() set data-* with hyphenated property na
 
 	var a, b;
 
-	a = jQuery( "<div/>" ).appendTo( "#qunit-fixture" );
+	a = jQuery( "<div></div>" ).appendTo( "#qunit-fixture" );
 
 	a.attr( "data-long-param", "test" );
 	a.data( "long-param", { a: 2 } );
 
 	assert.deepEqual( a.data( "long-param" ), { a: 2 }, "data with property long-param was found, 1" );
 
-	b = jQuery( "<div/>" ).appendTo( "#qunit-fixture" );
+	b = jQuery( "<div></div>" ).appendTo( "#qunit-fixture" );
 
 	b.attr( "data-long-param", "test" );
 	b.data( "long-param" );
@@ -606,26 +598,49 @@ QUnit.test( ".data always sets data with the camelCased key (gh-2257)", function
 
 	var div = jQuery( "<div>" ).appendTo( "#qunit-fixture" ),
 		datas = {
-			"non-empty": "a string",
-			"empty-string": "",
-			"one-value": 1,
-			"zero-value": 0,
-			"an-array": [],
-			"an-object": {},
-			"bool-true": true,
-			"bool-false": false,
-
-			// JSHint enforces double quotes,
-			// but JSON strings need double quotes to parse
-			// so we need escaped double quotes here
-			"some-json": "{ \"foo\": \"bar\" }"
+			"non-empty": {
+				key: "nonEmpty",
+				value: "a string"
+			},
+			"empty-string": {
+				key: "emptyString",
+				value: ""
+			},
+			"one-value": {
+				key: "oneValue",
+				value: 1
+			},
+			"zero-value": {
+				key: "zeroValue",
+				value: 0
+			},
+			"an-array": {
+				key: "anArray",
+				value: []
+			},
+			"an-object": {
+				key: "anObject",
+				value: {}
+			},
+			"bool-true": {
+				key: "boolTrue",
+				value: true
+			},
+			"bool-false": {
+				key: "boolFalse",
+				value: false
+			},
+			"some-json": {
+				key: "someJson",
+				value: "{ \"foo\": \"bar\" }"
+			}
 		};
 
 	jQuery.each( datas, function( key, val ) {
-		div.data( key, val );
+		div.data( key, val.value );
 		var allData = div.data();
 		assert.equal( allData[ key ], undefined, ".data does not store with hyphenated keys" );
-		assert.equal( allData[ jQuery.camelCase( key ) ], val, ".data stores the camelCased key" );
+		assert.equal( allData[ val.key ], val.value, ".data stores the camelCased key" );
 	} );
 } );
 
@@ -641,38 +656,90 @@ QUnit.test( ".data should not strip more than one hyphen when camelCasing (gh-20
 
 QUnit.test( ".data supports interoperable hyphenated/camelCase get/set of properties with arbitrary non-null|NaN|undefined values", function( assert ) {
 
-	var div = jQuery( "<div/>", { id: "hyphened" } ).appendTo( "#qunit-fixture" ),
+	var div = jQuery( "<div></div>", { id: "hyphened" } ).appendTo( "#qunit-fixture" ),
 		datas = {
-			"non-empty": "a string",
-			"empty-string": "",
-			"one-value": 1,
-			"zero-value": 0,
-			"an-array": [],
-			"an-object": {},
-			"bool-true": true,
-			"bool-false": false,
+			"non-empty": {
+				key: "nonEmpty",
+				value: "a string"
+			},
+			"empty-string": {
+				key: "emptyString",
+				value: ""
+			},
+			"one-value": {
+				key: "oneValue",
+				value: 1
+			},
+			"zero-value": {
+				key: "zeroValue",
+				value: 0
+			},
+			"an-array": {
+				key: "anArray",
+				value: []
+			},
+			"an-object": {
+				key: "anObject",
+				value: {}
+			},
+			"bool-true": {
+				key: "boolTrue",
+				value: true
+			},
+			"bool-false": {
+				key: "boolFalse",
+				value: false
+			},
+			"some-json": {
+				key: "someJson",
+				value: "{ \"foo\": \"bar\" }"
+			},
 
-			// JSHint enforces double quotes,
-			// but JSON strings need double quotes to parse
-			// so we need escaped double quotes here
-			"some-json": "{ \"foo\": \"bar\" }",
-			"num-1-middle": true,
-			"num-end-2": true,
-			"2-num-start": true
+			"num-1-middle": {
+				key: "num-1Middle",
+				value: true
+			},
+			"num-end-2": {
+				key: "numEnd-2",
+				value: true
+			},
+			"2-num-start": {
+				key: "2NumStart",
+				value: true
+			},
+
+			// Vendor prefixes are not treated in a special way.
+			"-ms-foo": {
+				key: "MsFoo",
+				value: true
+			},
+			"-moz-foo": {
+				key: "MozFoo",
+				value: true
+			},
+			"-webkit-foo": {
+				key: "WebkitFoo",
+				value: true
+			},
+			"-fake-foo": {
+				key: "FakeFoo",
+				value: true
+			}
 		};
 
-	assert.expect( 24 );
+	assert.expect( 32 );
 
 	jQuery.each( datas, function( key, val ) {
-		div.data( key, val );
+		div.data( key, val.value );
 
-		assert.deepEqual( div.data( key ), val, "get: " + key );
-		assert.deepEqual( div.data( jQuery.camelCase( key ) ), val, "get: " + jQuery.camelCase( key ) );
+		assert.deepEqual( div.data( key ), val.value, "get: " + key );
+		assert.deepEqual( div.data( val.key ), val.value, "get: " + val.key );
 	} );
 } );
 
 QUnit.test( ".data supports interoperable removal of hyphenated/camelCase properties", function( assert ) {
-	var div = jQuery( "<div/>", { id: "hyphened" } ).appendTo( "#qunit-fixture" ),
+	var div = jQuery( "<div></div>", { id: "hyphened" } ).appendTo( "#qunit-fixture" ),
+		rdashAlpha = /-([a-z])/g,
 		datas = {
 			"non-empty": "a string",
 			"empty-string": "",
@@ -682,20 +749,24 @@ QUnit.test( ".data supports interoperable removal of hyphenated/camelCase proper
 			"an-object": {},
 			"bool-true": true,
 			"bool-false": false,
-
-			// JSHint enforces double quotes,
-			// but JSON strings need double quotes to parse
-			// so we need escaped double quotes here
 			"some-json": "{ \"foo\": \"bar\" }"
 		};
 
 	assert.expect( 27 );
 
+	function fcamelCase( all, letter ) {
+		return letter.toUpperCase();
+	}
+
 	jQuery.each( datas, function( key, val ) {
 		div.data( key, val );
 
 		assert.deepEqual( div.data( key ), val, "get: " + key );
-		assert.deepEqual( div.data( jQuery.camelCase( key ) ), val, "get: " + jQuery.camelCase( key ) );
+		assert.deepEqual(
+			div.data( key.replace( rdashAlpha, fcamelCase ) ),
+			val,
+			"get: " + key.replace( rdashAlpha, fcamelCase )
+		);
 
 		div.removeData( key );
 
@@ -704,7 +775,7 @@ QUnit.test( ".data supports interoperable removal of hyphenated/camelCase proper
 	} );
 } );
 
-QUnit.test( ".data supports interoperable removal of properties SET TWICE #13850", function( assert ) {
+QUnit.test( ".data supports interoperable removal of properties SET TWICE trac-13850", function( assert ) {
 	var div = jQuery( "<div>" ).appendTo( "#qunit-fixture" ),
 		datas = {
 			"non-empty": "a string",
@@ -715,10 +786,6 @@ QUnit.test( ".data supports interoperable removal of properties SET TWICE #13850
 			"an-object": {},
 			"bool-true": true,
 			"bool-false": false,
-
-			// JSHint enforces double quotes,
-			// but JSON strings need double quotes to parse
-			// so we need escaped double quotes here
 			"some-json": "{ \"foo\": \"bar\" }"
 		};
 
@@ -734,7 +801,7 @@ QUnit.test( ".data supports interoperable removal of properties SET TWICE #13850
 	} );
 } );
 
-QUnit.test( ".removeData supports removal of hyphenated properties via array (#12786, gh-2257)", function( assert ) {
+QUnit.test( ".removeData supports removal of hyphenated properties via array (trac-12786, gh-2257)", function( assert ) {
 	assert.expect( 4 );
 
 	var div, plain, compare;
@@ -767,20 +834,20 @@ QUnit.test( ".removeData supports removal of hyphenated properties via array (#1
 } );
 
 // Test originally by Moschel
-QUnit.test( ".removeData should not throw exceptions. (#10080)", function( assert ) {
+QUnit.test( ".removeData should not throw exceptions. (trac-10080)", function( assert ) {
+	var done = assert.async();
 	assert.expect( 1 );
-	QUnit.stop();
 	var frame = jQuery( "#loadediframe" );
 	jQuery( frame[ 0 ].contentWindow ).on( "unload", function() {
 		assert.ok( true, "called unload" );
-		QUnit.start();
+		done();
 	} );
 
 	// change the url to trigger unload
-	frame.attr( "src", "data/iframe.html?param=true" );
+	frame.attr( "src", baseURL + "iframe.html?param=true" );
 } );
 
-QUnit.test( ".data only checks element attributes once. #8909", function( assert ) {
+QUnit.test( ".data only checks element attributes once. trac-8909", function( assert ) {
 	assert.expect( 2 );
 	var testing = {
 			"test": "testing",
@@ -808,7 +875,7 @@ QUnit.test( "data-* with JSON value can have newlines", function( assert ) {
 	x.remove();
 } );
 
-QUnit.test( ".data doesn't throw when calling selection is empty. #13551", function( assert ) {
+QUnit.test( ".data doesn't throw when calling selection is empty. trac-13551", function( assert ) {
 	assert.expect( 1 );
 
 	try {
@@ -845,7 +912,7 @@ QUnit.test( "acceptData", function( assert ) {
 	assert.equal( jQuery( form ) .data( "test", 42 ).data( "test" ), 42, "form with aliased DOM properties" );
 } );
 
-QUnit.test( "Check proper data removal of non-element descendants nodes (#8335)", function( assert ) {
+QUnit.test( "Check proper data removal of non-element descendants nodes (trac-8335)", function( assert ) {
 	assert.expect( 1 );
 
 	var div = jQuery( "<div>text</div>" ),
@@ -857,10 +924,10 @@ QUnit.test( "Check proper data removal of non-element descendants nodes (#8335)"
 	assert.ok( !text.data( "test" ), "Be sure data is not stored in non-element" );
 } );
 
-testIframeWithCallback(
-	"enumerate data attrs on body (#14894)",
+testIframe(
+	"enumerate data attrs on body (trac-14894)",
 	"data/dataAttrs.html",
-	function( result, assert ) {
+	function( assert, jQuery, window, document, result ) {
 		assert.expect( 1 );
 		assert.equal( result, "ok", "enumeration of data- attrs on body" );
 	}
@@ -870,7 +937,7 @@ QUnit.test( "Check that the expando is removed when there's no more data", funct
 	assert.expect( 2 );
 
 	var key,
-		div = jQuery( "<div/>" );
+		div = jQuery( "<div></div>" );
 	div.data( "some", "data" );
 	assert.equal( div.data( "some" ), "data", "Data is added" );
 	div.removeData( "some" );
@@ -881,13 +948,13 @@ QUnit.test( "Check that the expando is removed when there's no more data", funct
 			assert.strictEqual( div[ 0 ][ key ], undefined, "Expando was not removed when there was no more data" );
 		}
 	}
-});
+} );
 
 QUnit.test( "Check that the expando is removed when there's no more data on non-nodes", function( assert ) {
 	assert.expect( 1 );
 
 	var key,
-		obj = jQuery( {key: 42} );
+		obj = jQuery( { key: 42 } );
 	obj.data( "some", "data" );
 	assert.equal( obj.data( "some" ), "data", "Data is added" );
 	obj.removeData( "some" );
@@ -904,7 +971,7 @@ QUnit.test( ".data(prop) does not create expando", function( assert ) {
 	assert.expect( 1 );
 
 	var key,
-		div = jQuery( "<div/>" );
+		div = jQuery( "<div></div>" );
 
 	div.data( "foo" );
 	assert.equal( jQuery.hasData( div[ 0 ] ), false, "No data exists after access" );
@@ -915,4 +982,19 @@ QUnit.test( ".data(prop) does not create expando", function( assert ) {
 			assert.ok( false, "Expando was created on access" );
 		}
 	}
+} );
+
+QUnit.test( "keys matching Object.prototype properties  (gh-3256)", function( assert ) {
+	assert.expect( 2 );
+
+	var div = jQuery( "<div></div>" );
+
+	assert.strictEqual( div.data( "hasOwnProperty" ), undefined,
+		"hasOwnProperty not matched (before forced data creation)" );
+
+	// Force the creation of a data object for this element.
+	div.data( { foo: "bar" } );
+
+	assert.strictEqual( div.data( "hasOwnProperty" ), undefined,
+		"hasOwnProperty not matched (after forced data creation)" );
 } );

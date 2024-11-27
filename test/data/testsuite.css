@@ -53,11 +53,11 @@ div.medopacity {
 }
 
 div.nowidth {
-	width: 0px;
+	width: 0;
 }
 
 div.noheight {
-	height: 0px;
+	height: 0;
 }
 
 div.noopacity {
@@ -112,16 +112,16 @@ div#fx-tests div.noback {
 #nothiddendivchild.em { font-size: 2em; }
 #nothiddendivchild.prct { font-size: 150%; }
 
-/* #9239 Attach a background to the body( avoid crashes in removing the test element in support ) */
-body, div { background: url(http://static.jquery.com/files/rocker/images/logo_jquery_215x53.gif) no-repeat -1000px 0; }
+/* trac-9239 Attach a background to the body( avoid crashes in removing the test element in support ) */
+body, div { background: url(1x1.jpg) no-repeat -1000px 0; }
 
-/* #10501 */
+/* trac-10501 */
 section { background:#f0f; display:block; }
 
-/* #11971 */
+/* trac-11971 */
 #foo { background: url(1x1.jpg) right bottom no-repeat; }
 
-/* #14824 */
+/* trac-14824 */
 #span-14824 { display: block; }
 
 #display { display: list-item !important; }
@@ -130,3 +130,19 @@ section { background:#f0f; display:block; }
 .inline { display: inline; }
 .list-item { display: list-item; }
 .hidden, .none { display: none; }
+
+#div-gh-2836 {
+	position: relative;
+	overflow: auto;
+	height: 100px;
+}
+#div-gh-2836 div {
+	position: relative;
+	height: 100%;
+	padding: 0;
+	margin: 0;
+}
+
+.border-box, .border-box * {
+	box-sizing: border-box;
+}

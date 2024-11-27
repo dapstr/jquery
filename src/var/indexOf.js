@@ -1,5 +1,3 @@
-define( [
-	"./arr"
-], function( arr ) {
-	return arr.indexOf;
-} );
+import { arr } from "./arr.js";
+
+export var indexOf = arr.indexOf;

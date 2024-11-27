@@ -1,5 +1,3 @@
-define( [
-	"./arr"
-], function( arr ) {
-	return arr.push;
-} );
+import { arr } from "./arr.js";
+
+export var push = arr.push;

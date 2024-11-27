@@ -1,5 +1,3 @@
-define( [
-	"./document"
-], function( document ) {
-	return document.documentElement;
-} );
+import { document } from "./document.js";
+
+export var documentElement = document.documentElement;
